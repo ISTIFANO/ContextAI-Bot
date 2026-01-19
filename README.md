@@ -31,7 +31,7 @@ A production-ready chatbot REST API built with Spring Boot, LangChain4j, and Goo
 
 1. **Clone the repository**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ISTIFANO/ContextAI-Bot.git
 cd chatbot-project
 ```
 
