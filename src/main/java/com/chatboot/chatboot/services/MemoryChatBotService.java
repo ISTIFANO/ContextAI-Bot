@@ -36,6 +36,7 @@ public class MemoryChatBotService {
                         "- ما تزيد حتى معلومة من عندك.\n" +
                         "- ما تستعمل حتى معلومة ما كايناش فالمعطيات.\n" +
                         "- إلا ما لقيتيش الجواب فالمعطيات، قول بوضوح:\n" +
+                        "تسول أسئلة توضيحية إلا كان الطلب ما واضحش:\n" +
                         "  \"ما كايناش هاد المعلومة دابا.\"\n\n" +
 
                         "قاعدة المعطيات العقارية\n" +
@@ -76,7 +77,6 @@ public class MemoryChatBotService {
 
     public String sendMessage(String userMessage, String conversationId) {
 
-        logRequest(conversationId, userMessage);
 
         ConversationService conversation = conversationMap.computeIfAbsent(
                 conversationId,
@@ -87,11 +87,9 @@ public class MemoryChatBotService {
         try {
             response = conversation.chat(userMessage);
         } catch (Exception e) {
-            response = "⚠️ Error calling LLM: " + e.getMessage();
+            response = " Error calling LLM: " + e.getMessage();
         }
 
-        logResponse(conversationId, response);
-        logToFileJson(conversationId, userMessage, response);
 
         return response;
     }
@@ -116,35 +114,5 @@ public class MemoryChatBotService {
 
     public int getActiveConversationsCount() {
         return conversationMap.size();
-    }
-
-    // ================= Logging Methods =================
-
-    private void logRequest(String conversationId, String userMessage) {
-        System.out.println("===========================================");
-        System.out.println("⏱ Time: " + LocalDateTime.now());
-        System.out.println("👤 User ID: " + conversationId);
-        System.out.println("📤 Request to LLM: " + userMessage);
-        System.out.println("===========================================");
-    }
-
-    private void logResponse(String conversationId, String response) {
-        System.out.println("===========================================");
-        System.out.println("⏱ Time: " + LocalDateTime.now());
-        System.out.println("👤 User ID: " + conversationId);
-        System.out.println("📥 Response from LLM: " + response);
-        System.out.println("===========================================");
-    }
-
-    private void logToFileJson(String conversationId, String userMessage, String response) {
-        try (FileWriter fw = new FileWriter("chatbot_full_requests.json", true)) {
-            String json = String.format(
-                    "{\"time\":\"%s\", \"user\":\"%s\", \"request\":\"%s\", \"response\":\"%s\"}\n",
-                    LocalDateTime.now(), conversationId, userMessage.replace("\"", "\\\""), response.replace("\"", "\\\"")
-            );
-            fw.write(json);
-        } catch (IOException e) {
-            System.out.println("⚠️ Logging to file failed: " + e.getMessage());
-        }
     }
 }

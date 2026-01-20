@@ -60,26 +60,18 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- LangChain4j Core (high level API) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- Gemini Chat support (Google Vertex AI) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-google-ai-gemini</artifactId>
             <version>${langchain4j.gemini.version}</version>
         </dependency>
 
-        <!-- Qdrant Vector Store support -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-qdrant</artifactId>
-            <version>${qdrant.version}</version>
-        </dependency>
 
     </dependencies>
 
