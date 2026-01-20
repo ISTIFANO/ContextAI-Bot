@@ -7,6 +7,9 @@ import dev.langchain4j.service.AiServices;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,81 +26,125 @@ public class MemoryChatBotService {
 
     public MemoryChatBotService(@Value("${gemini.api.key}") String geminiApiKey) {
         this.systemPrompt =
-                "أنت مساعد ذكي خاص بمشروع عقاري وكتجاوب غير بالدارجة المغربية 🇲🇦. " +
-                        "خاصك تجاوب بوضوح، باختصار، وبطريقة مفهومة. " +
-                        "ممنوع تزير شي معلومة من عندك. " +
-                        "إلا ما لقيتيش الجواب فالمعطيات التالية، قول: ما كايناش هاد المعلومة دابا.\n\n" +
+                "أنت مساعد ذكي واحترافي خاص بمشروع عقاري، وكتجاوب غير بالدارجة المغربية.\n\n" +
+
+                        "الهدف ديالك:\n" +
+                        "- تفهم الاحتياج الحقيقي ديال الكليان (السكن، الاستثمار، الميزانية، المساحة، عدد الغرف).\n" +
+                        "- تسول أسئلة توضيحية إلا كان الطلب ما واضحش.\n" +
+                        "- تقترح عروض مناسبة غير من قاعدة المعطيات اللي تحت.\n" +
+                        "- تجاوب بوضوح، باختصار، وبطريقة سهلة للفهم.\n" +
+                        "- ما تزيد حتى معلومة من عندك.\n" +
+                        "- ما تستعمل حتى معلومة ما كايناش فالمعطيات.\n" +
+                        "- إلا ما لقيتيش الجواب فالمعطيات، قول بوضوح:\n" +
+                        "  \"ما كايناش هاد المعلومة دابا.\"\n\n" +
+
+                        "قاعدة المعطيات العقارية\n" +
+                        "==============================\n\n" +
 
                         "===== سكن اجتماعي =====\n" +
-                        "- ما كاينش دعم ديال 100.000 درهم، غير 50.000 درهم فقط.\n" +
-                        "- ثمن الشقة هو 300.000 درهم، ومن بعد الدعم كيوصل لـ 250.000 درهم.\n" +
-                        "- المساحة 67 متر مربع.\n" +
+                        "- الدعم: 50.000 درهم فقط.\n" +
+                        "- ثمن الشقة: 300.000 درهم (من بعد الدعم: 250.000 درهم).\n" +
+                        "- المساحة: 67 متر مربع.\n" +
                         "- عدد الغرف: جوج ولا ثلاثة.\n" +
                         "- ما كاينش تسبيق.\n" +
                         "- رخصة السكن والتيتر الفونسي واجدين.\n" +
-                        "- ما كاينش النقل دابا حيث المشروع جديد.\n" +
-                        "- جميع الطوابق متوفرة من الطابق الأول حتى الرابع.\n" +
+                        "- جميع الطوابق متوفرة من 1 حتى 4.\n" +
                         "- كاين المصعد.\n\n" +
 
-                        "===== شقق متوسطة المستوى (ميموزا) =====\n" +
-                        "- المساحة ما بين 74 و93 متر مربع.\n" +
-                        "- الثمن ابتداءً من 5800 درهم للمتر المربع.\n\n" +
+                        "===== شقق ميموزا =====\n" +
+                        "- المساحة: 74-93 متر مربع.\n" +
+                        "- الثمن: ابتداءً من 5800 درهم/م².\n\n" +
 
                         "===== محلات تجارية =====\n" +
-                        "- المساحة ما بين 25 و30 متر مربع.\n" +
-                        "- الثمن 10.500 درهم للمتر المربع.\n\n" +
+                        "- المساحة: 25-30 متر مربع.\n" +
+                        "- الثمن: 10.500 درهم/م².\n\n" +
 
                         "===== قطع أرض =====\n" +
-                        "R+2 سكني:\n" +
-                        "- المساحة 100 متر مربع.\n" +
-                        "- الثمن ابتداءً من 3200 درهم للمتر المربع.\n\n" +
-
-                        "R+3 سكني:\n" +
-                        "- المساحة ما بين 110 و120 متر مربع.\n" +
-                        "- الثمن ابتداءً من 4000 درهم للمتر المربع.\n" +
-                        "- الطابق الأرضي تجاري.\n" +
-                        "- مسموح بالكراج (Cave) حسب دفتر التحملات.\n\n" +
-
-                        "R+4 سكني:\n" +
-                        "- المساحة ما بين 160 و177 متر مربع.\n" +
-                        "- الثمن ابتداءً من 6500 درهم للمتر المربع.\n" +
-                        "- الطابق الأرضي تجاري.\n" +
-                        "- مسموح بالكراج (Cave) حسب دفتر التحملات.\n\n" +
-
-                        "قطع أرض فيلا:\n" +
-                        "- المساحة ما بين 200 و300 متر مربع.\n" +
-                        "- الثمن ابتداءً من 2800 درهم للمتر المربع.\n";
+                        "R+2: 100 م², 3200 درهم/م².\n" +
+                        "R+3: 110-120 م², 4000 درهم/م², الطابق الأرضي تجاري, Cave مسموح.\n" +
+                        "R+4: 160-177 م², 6500 درهم/م², الطابق الأرضي تجاري, Cave مسموح.\n" +
+                        "فيلا: 200-300 م², 2800 درهم/م².\n";
 
         this.gemini = GoogleAiGeminiChatModel.builder()
                 .apiKey(geminiApiKey)
                 .modelName("gemini-2.5-flash")
-                .temperature(0.7)
-                .maxOutputTokens(1000)
+                .temperature(0.0)
+                .maxOutputTokens(500)
+                .maxRetries(0)
                 .build();
     }
+
     public String sendMessage(String userMessage, String conversationId) {
+
+        logRequest(conversationId, userMessage);
+
         ConversationService conversation = conversationMap.computeIfAbsent(
                 conversationId,
                 id -> createConversationService()
         );
-        return conversation.chat(userMessage);
+
+        String response;
+        try {
+            response = conversation.chat(userMessage);
+        } catch (Exception e) {
+            response = "⚠️ Error calling LLM: " + e.getMessage();
+        }
+
+        logResponse(conversationId, response);
+        logToFileJson(conversationId, userMessage, response);
+
+        return response;
     }
+
     private ConversationService createConversationService() {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(30);
         chatMemory.add(SystemMessage.from(systemPrompt));
+
         return AiServices.builder(ConversationService.class)
                 .chatModel(gemini)
                 .chatMemory(chatMemory)
                 .build();
     }
+
     public void clearConversation(String conversationId) {
         conversationMap.remove(conversationId);
     }
+
     public void clearAllConversations() {
         conversationMap.clear();
     }
 
     public int getActiveConversationsCount() {
         return conversationMap.size();
+    }
+
+    // ================= Logging Methods =================
+
+    private void logRequest(String conversationId, String userMessage) {
+        System.out.println("===========================================");
+        System.out.println("⏱ Time: " + LocalDateTime.now());
+        System.out.println("👤 User ID: " + conversationId);
+        System.out.println("📤 Request to LLM: " + userMessage);
+        System.out.println("===========================================");
+    }
+
+    private void logResponse(String conversationId, String response) {
+        System.out.println("===========================================");
+        System.out.println("⏱ Time: " + LocalDateTime.now());
+        System.out.println("👤 User ID: " + conversationId);
+        System.out.println("📥 Response from LLM: " + response);
+        System.out.println("===========================================");
+    }
+
+    private void logToFileJson(String conversationId, String userMessage, String response) {
+        try (FileWriter fw = new FileWriter("chatbot_full_requests.json", true)) {
+            String json = String.format(
+                    "{\"time\":\"%s\", \"user\":\"%s\", \"request\":\"%s\", \"response\":\"%s\"}\n",
+                    LocalDateTime.now(), conversationId, userMessage.replace("\"", "\\\""), response.replace("\"", "\\\"")
+            );
+            fw.write(json);
+        } catch (IOException e) {
+            System.out.println("⚠️ Logging to file failed: " + e.getMessage());
+        }
     }
 }

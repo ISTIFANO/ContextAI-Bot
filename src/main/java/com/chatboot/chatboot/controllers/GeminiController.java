@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/gemini")
@@ -24,9 +25,12 @@ public class GeminiController {
     }
 
     @PostMapping("/chat")
-    public ResponseEntity<ChatResponseDto> chatText(@RequestParam String conversationId,
-                                                    @RequestParam String message) {
+    public ResponseEntity<ChatResponseDto> chatText(@RequestBody Map<String, String> payload) {
+        String conversationId = payload.get("conversationId");
+        String message = payload.get("message");
+
         String response = chatBotService.sendMessage(message, conversationId);
+
         return ResponseEntity.ok(ChatResponseDto.of(
                 response,
                 conversationId,
